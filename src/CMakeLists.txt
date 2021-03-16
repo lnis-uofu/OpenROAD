@@ -127,7 +127,7 @@ add_subdirectory(gui)
 add_subdirectory(TritonRoute)
 add_subdirectory(utility)
 add_subdirectory(pdrev)
-
+add_subdirectory(mockturtle)
 ################################################################
 
 add_executable(openroad
@@ -174,6 +174,7 @@ target_link_libraries(openroad
   antennachecker
   PartitionMgr
   utility
+  mockturtle
   ${TCL_LIBRARY}
   ${CMAKE_THREAD_LIBS_INIT}
 )
