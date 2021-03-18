@@ -128,6 +128,7 @@ add_subdirectory(TritonRoute)
 add_subdirectory(utility)
 add_subdirectory(pdrev)
 add_subdirectory(mockturtle)
+add_subdirectory(PSOracle)
 ################################################################
 
 add_executable(openroad
