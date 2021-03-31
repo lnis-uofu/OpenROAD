@@ -1,15 +1,15 @@
 # Copyright (c) 2019, Parallax Software, Inc.
-# 
+#
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
@@ -96,8 +96,8 @@ else()
   set(ZLIB 0)
 endif()
 
-find_package(spdlog REQUIRED)
-message(STATUS "spdlog: ${spdlog_VERSION}")
+# find_package(spdlog REQUIRED)
+# message(STATUS "spdlog: ${spdlog_VERSION}")
 
 find_package(Threads REQUIRED)
 set(THREADS_PREFER_PTHREAD_FLAG ON)
@@ -129,6 +129,7 @@ add_subdirectory(utility)
 add_subdirectory(pdrev)
 add_subdirectory(mockturtle)
 add_subdirectory(PSOracle)
+add_subdirectory(spdlog)
 ################################################################
 
 add_executable(openroad
@@ -182,7 +183,7 @@ target_link_libraries(openroad
 
 # tclReadline
 if (TCL_READLINE_LIBRARY AND TCL_READLINE_H)
-  target_compile_definitions(openroad PRIVATE ENABLE_READLINE)
+  targaset_compile_definitions(openroad PRIVATE ENABLE_READLINE)
   target_link_libraries(openroad ${TCL_READLINE_LIBRARY})
   target_include_directories(openroad PRIVATE ${TCL_READLINE_H})
   message(STATUS "TCL readline enabled")
