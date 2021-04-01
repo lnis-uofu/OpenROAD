@@ -1,9 +1,14 @@
 yosys -import
-read_verilog -defer -sv gcd.v
+read_verilog -defer -sv c17.v
 read_liberty -lib sky130_fd_sc_hd__tt_025C_1v80.lib
 read_verilog -defer cells_clkgate_hd.v
-synth  -top gcd -flatten
-opt -purge
+hierarchy -check -top c17
+procs
+#flatten
+#fsm
+techmap
+#synth -top c17 -flatten
+#opt -purge
 techmap -map cells_latch_hd.v
 dfflibmap -liberty sky130_fd_sc_hd__tt_025C_1v80.lib
 opt
@@ -19,4 +24,4 @@ hilomap -singleton \
         -locell sky130_fd_sc_hd__buf_4 A X
 insbuf -buf sky130_fd_sc_hd__buf_4 A X
 check
-write_verilog -noattr -noexpr -nohex -nodec mapped.v
+write_verilog -noattr -noexpr -nohex -nodec c17_mapped.v

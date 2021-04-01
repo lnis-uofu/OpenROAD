@@ -1,9 +1,10 @@
-#include <mockturtle/mockturtle.hpp>
+#include <mockturtle/networks/aig.hpp>
 #include <sta/Network.hh>
 #include <sta/FuncExpr.hh>
 #include <sta/Liberty.hh>
 #include <sta/PortDirection.hh>
-
+#include "convert.hh"
+namespace psoracle {
 mockturtle::aig_network::signal convertFuncHack(mockturtle::aig_network *ntk, sta::FuncExpr *expr)
 {
   switch (expr->op()) {
@@ -86,10 +87,6 @@ sta::FuncExpr *hackFunc(std::map<sta::LibertyPort*, sta::FuncExpr*> *drivers, st
   }
 }
 
-void recurse(std::map<sta::Net*, sta::FuncExpr**>* drivers,
-	sta::Instance *instance,
-	     sta::Network *adapter);
-
 mockturtle::aig_network *dothething(sta::Network *adapter)
 {
   mockturtle::aig_network *network;
@@ -117,7 +114,6 @@ mockturtle::aig_network *dothething(sta::Network *adapter)
   // TODO memory cleanup
   return network;
 }
-  //
 
 
   /*
@@ -141,8 +137,6 @@ mockturtle::aig_network *dothething(sta::Network *adapter)
     // TODO memory cleanup
     return network;
   */
-
-
 
 
 
@@ -210,4 +204,5 @@ void recurse(std::map<sta::Net*, sta::FuncExpr**> *drivers,
   } else {
     return extractHierarchical(drivers, instance, adapter);
   }
+}
 }
