@@ -135,6 +135,8 @@ def scan_file(path, file_name, msgs):
 
 def scan_dir(path, files, msgs):
     for file_name in files:
+        if "TCL_wrap" in file_name:
+            continue
         if re.search(r"\.(c|cc|cpp|cxx|h|hh|yy|ll|i|tcl)$", file_name):
             scan_file(path, file_name, msgs)
 

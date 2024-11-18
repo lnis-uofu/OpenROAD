@@ -59,6 +59,7 @@ target_link_libraries(mpl2_lib
     OpenSTA
     odb
     ortools::ortools
+    utf8_validity
     dl
     par_lib
 )

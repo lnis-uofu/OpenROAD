@@ -190,9 +190,12 @@ if(BUILD_MAN)
     COMMAND make clean && make preprocess && make all -j${PROCESSOR_COUNT}
     WORKING_DIRECTORY ${OPENROAD_HOME}/docs
   )
-  
+
   # Based on ${CMAKE_INSTALL_PREFIX}, we want to go to ${CMAKE_INSTALL_PREFIX}/share/man
   set(MANPAGE_DIR ${OPENROAD_HOME}/docs/cat)
   install(DIRECTORY ${MANPAGE_DIR} DESTINATION ${CMAKE_INSTALL_PREFIX}/share/man)
 
 endif()
+
+find_package(protobuf REQUIRED CONFIG)
+link_libraries(protobuf::libprotobuf absl_log_internal_message absl_log_internal_check_op)

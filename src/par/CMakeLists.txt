@@ -78,6 +78,7 @@ target_link_libraries(par_lib
     utl_lib
     dbSta_lib
     ortools::ortools
+    utf8_validity
 )
 
 if (LOAD_CPLEX)

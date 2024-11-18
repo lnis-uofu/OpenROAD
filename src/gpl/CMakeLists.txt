@@ -91,6 +91,7 @@ target_link_libraries(gpl
     ortools::ortools
     Threads::Threads
     OpenMP::OpenMP_CXX
+    utf8_validity
 )
 
 if (Python3_FOUND AND BUILD_PYTHON)

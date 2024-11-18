@@ -38,6 +38,7 @@
 #include <omp.h>
 #include <ortools/linear_solver/linear_solver.h>
 #include <ortools/sat/cp_model.h>
+#include <fmt/ranges.h>
 
 #include <algorithm>
 #include <random>
