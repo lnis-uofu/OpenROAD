@@ -145,5 +145,5 @@ function(swig_lib)
         ${LANG_INIT}
     )
   endif()
-  install(${ARG_NAME})
+  install(TARGETS ${ARG_NAME})
 endfunction()
