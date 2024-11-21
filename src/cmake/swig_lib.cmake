@@ -145,4 +145,8 @@ function(swig_lib)
         ${LANG_INIT}
     )
   endif()
+  install(TARGETS ${ARG_NAME}
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/openroad_swig
+  )
+
 endfunction()
