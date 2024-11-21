@@ -6,7 +6,7 @@ swig_lib(NAME          odb_py
          I_FILE        ../common/odb.i
          SWIG_INCLUDES ${PROJECT_SOURCE_DIR}/include
                        ${PROJECT_SOURCE_DIR}/src/swig/python
-         SCRIPTS       ${CMAKE_CURRENT_BINARY_DIR}/odb_py.py
+         SCRIPTS       ${CMAKE_SWIG_OUTDIR}/odb_py.py
 )
 
 target_include_directories(odb_py
@@ -25,8 +25,8 @@ target_link_libraries(odb_py
 )
 
 # Executable
-add_executable(odb_py-bin 
-                main.cpp 
+add_executable(odb_py-bin
+                main.cpp
 )
 
 target_include_directories(odb_py-bin
@@ -40,6 +40,6 @@ target_link_libraries(odb_py-bin
 )
 
 set_target_properties(odb_py-bin
-    PROPERTIES 
+    PROPERTIES
         OUTPUT_NAME odb_py
 )

@@ -246,7 +246,7 @@ if (Python3_FOUND AND BUILD_PYTHON)
            LANGUAGE      python
            I_FILE        src/TritonRoute-py.i
            SWIG_INCLUDES ${PROJECT_SOURCE_DIR}/include/drt
-           SCRIPTS       ${CMAKE_CURRENT_BINARY_DIR}/drt_py.py
+           SCRIPTS       ${CMAKE_SWIG_OUTDIR}/drt_py.py
   )
 
   target_include_directories(drt_py

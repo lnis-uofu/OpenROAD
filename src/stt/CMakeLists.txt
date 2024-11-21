@@ -112,7 +112,7 @@ if (Python3_FOUND AND BUILD_PYTHON)
            LANGUAGE      python
            I_FILE        src/SteinerTreeBuilder-py.i
            SWIG_INCLUDES ${PROJECT_SOURCE_DIR}/include/stt
-           SCRIPTS       ${CMAKE_CURRENT_BINARY_DIR}/stt_py.py
+           SCRIPTS       ${CMAKE_SWIG_OUTDIR}/stt_py.py
   )
 
   target_include_directories(stt_py

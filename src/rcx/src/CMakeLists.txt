@@ -140,7 +140,7 @@ if (Python3_FOUND AND BUILD_PYTHON)
            LANGUAGE      python
            I_FILE        ext-py.i
            SWIG_INCLUDES ${PROJECT_SOURCE_DIR}/../include
-           SCRIPTS       ${CMAKE_CURRENT_BINARY_DIR}/rcx_py.py
+           SCRIPTS       ${CMAKE_SWIG_OUTDIR}/rcx_py.py
   )
 
   target_include_directories(rcx_py

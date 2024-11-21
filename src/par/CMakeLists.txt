@@ -144,7 +144,7 @@ if (Python3_FOUND AND BUILD_PYTHON)
            LANGUAGE      python
            I_FILE        src/partitionmgr-py.i
            SWIG_INCLUDES ${PROJECT_SOURCE_DIR}/include/par
-           SCRIPTS       ${CMAKE_CURRENT_BINARY_DIR}/par_py.py
+           SCRIPTS       ${CMAKE_SWIG_OUTDIR}/par_py.py
   )
 
   target_include_directories(par_py

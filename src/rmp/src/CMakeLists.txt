@@ -63,7 +63,7 @@ target_include_directories(rmp
     .
  )
 
-target_link_libraries(rmp 
+target_link_libraries(rmp
   PRIVATE
     odb
     dbSta
@@ -73,7 +73,7 @@ target_link_libraries(rmp
     ${ABC_LIBRARY}
  )
 
-add_library(rmp_abc_library 
+add_library(rmp_abc_library
   abc_library_factory.cpp
   logic_extractor.cpp
   logic_cut.cpp
@@ -103,7 +103,7 @@ if (Python3_FOUND AND BUILD_PYTHON)
            SWIG_INCLUDES ${PROJECT_SOURCE_DIR}/../include
                          ${ODB_HOME}/src/swig/common
                          ${ODB_HOME}/src/swig/python
-           SCRIPTS       ${CMAKE_CURRENT_BINARY_DIR}/rmp_py.py
+           SCRIPTS       ${CMAKE_SWIG_OUTDIR}/rmp_py.py
   )
 
   target_include_directories(rmp_py

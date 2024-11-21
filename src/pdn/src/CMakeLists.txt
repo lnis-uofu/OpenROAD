@@ -48,7 +48,7 @@ target_sources(pdn
   PRIVATE
     PdnGen.cc
     MakePdnGen.cc
-    
+
     techlayer.cpp
     domain.cpp
     power_cells.cpp
@@ -91,14 +91,14 @@ if (Python3_FOUND AND BUILD_PYTHON)
                          ${ODB_HOME}/src/swig/python
                          ${ODB_HOME}/include
                          ${PROJECT_SOURCE_DIR}/../include/pdn
-           SCRIPTS       ${CMAKE_CURRENT_BINARY_DIR}/pdn_py.py
+           SCRIPTS       ${CMAKE_SWIG_OUTDIR}/pdn_py.py
   )
 
   target_include_directories(pdn_py
     PUBLIC
       .
   )
-  
+
   target_link_libraries(pdn_py
     PUBLIC
       pdn

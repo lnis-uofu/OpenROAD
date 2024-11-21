@@ -74,7 +74,7 @@ target_link_libraries(ppl
     gui
     Boost::boost
 )
-                      
+
 messages(
   TARGET ppl
 )
@@ -87,7 +87,7 @@ if (Python3_FOUND AND BUILD_PYTHON)
            SWIG_INCLUDES ${PROJECT_SOURCE_DIR}/include/ppl
                          ${ODB_HOME}/src/swig/common
                          ${ODB_HOME}/src/swig/python
-           SCRIPTS       ${CMAKE_CURRENT_BINARY_DIR}/ppl_py.py
+           SCRIPTS       ${CMAKE_SWIG_OUTDIR}/ppl_py.py
   )
 
   target_link_libraries(ppl_py

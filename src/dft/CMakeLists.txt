@@ -84,14 +84,14 @@ if (Python3_FOUND AND BUILD_PYTHON)
                          ${ODB_HOME}/src/swig/python
                          ${ODB_HOME}/include
                          ${PROJECT_SOURCE_DIR}/include
-           SCRIPTS       ${CMAKE_CURRENT_BINARY_DIR}/dft_py.py
+           SCRIPTS ${CMAKE_SWIG_OUTDIR}/dft_py.py
   )
 
   target_include_directories(dft_py
     PUBLIC
       ../include
   )
-  
+
   target_link_libraries(dft_py
     PUBLIC
       dft

@@ -100,13 +100,13 @@ if (Python3_FOUND AND BUILD_PYTHON)
            LANGUAGE      python
            I_FILE        src/replace-py.i
            SWIG_INCLUDES ${PROJECT_SOURCE_DIR}/include/gpl
-           SCRIPTS       ${CMAKE_CURRENT_BINARY_DIR}/gpl_py.py
+           SCRIPTS       ${CMAKE_SWIG_OUTDIR}/gpl_py.py
   )
 
   target_include_directories(gpl_py
     PUBLIC
       include
-      
+
   )
 
   target_link_libraries(gpl_py

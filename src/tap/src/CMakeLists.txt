@@ -74,7 +74,7 @@ if (Python3_FOUND AND BUILD_PYTHON)
            LANGUAGE      python
            I_FILE        tapcell-py.i
            SWIG_INCLUDES ${PROJECT_SOURCE_DIR}/src/tap/include
-           SCRIPTS       ${CMAKE_CURRENT_BINARY_DIR}/tap_py.py
+           SCRIPTS       ${CMAKE_SWIG_OUTDIR}/tap_py.py
   )
 
   target_link_libraries(tap_py

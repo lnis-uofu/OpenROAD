@@ -51,7 +51,7 @@ if (Python3_FOUND AND BUILD_PYTHON)
            I_FILE        src/Logger-py.i
            SWIG_INCLUDES ${PROJECT_SOURCE_DIR}/include/utl
                          ${PROJECT_SOURCE_DIR}/src
-           SCRIPTS       ${CMAKE_CURRENT_BINARY_DIR}/utl_py.py
+           SCRIPTS       ${CMAKE_SWIG_OUTDIR}/utl_py.py
   )
 
   target_include_directories(utl_py
@@ -60,7 +60,7 @@ if (Python3_FOUND AND BUILD_PYTHON)
     PRIVATE
       src
   )
-  
+
   target_link_libraries(utl_py
     PUBLIC
       spdlog::spdlog
@@ -93,7 +93,7 @@ target_sources(utl
     src/LoggerCommon.cpp
     src/MakeLogger.cpp
 )
-  
+
 target_include_directories(utl
   PUBLIC
     include
