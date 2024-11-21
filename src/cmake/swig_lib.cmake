@@ -71,7 +71,7 @@ function(swig_lib)
 
   swig_add_library(${ARG_NAME}
     LANGUAGE ${ARG_LANGUAGE}
-    TYPE     STATIC
+    TYPE     SHARED
     SOURCES  ${ARG_I_FILE}
   )
 
@@ -145,4 +145,5 @@ function(swig_lib)
         ${LANG_INIT}
     )
   endif()
+  install(${ARG_NAME})
 endfunction()
