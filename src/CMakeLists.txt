@@ -49,10 +49,10 @@ list(APPEND CMAKE_PREFIX_PATH
   "/opt/or-tools/lib/cmake"
 )
 
-# set(CMAKE_SWIG_OUTDIR ${CMAKE_CURRENT_BINARY_DIR}/swig/openroad)
+set(CMAKE_SWIG_OUTDIR ${CMAKE_CURRENT_BINARY_DIR}/swig/openroad)
 # file(COPY $<TARGET
-# file(COPY cmake/swig.py DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/swig/openroad/__init__.py)
-# file(COPY cmake/pyproject.toml DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/swig/pyproject.toml)
+file(COPY cmake/swig.py DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/swig/openroad/__init__.py)
+file(COPY cmake/pyproject.toml DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/swig/pyproject.toml)
 
 include("openroad")
 
@@ -419,7 +419,7 @@ if (Python3_FOUND AND BUILD_PYTHON)
            NAMESPACE ord
            LANGUAGE  python
            I_FILE    OpenRoad-py.i
-           SCRIPTS   ${CMAKE_CURRENT_BINARY_DIR}/openroad_swig_py.py
+           SCRIPTS   ${CMAKE_SWIG_OUTDIR}/openroad_swig_py.py
   )
 
   target_link_libraries(openroad_swig_py

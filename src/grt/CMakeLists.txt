@@ -114,7 +114,7 @@ if (Python3_FOUND AND BUILD_PYTHON)
            LANGUAGE      python
            I_FILE        src/GlobalRouter-py.i
            SWIG_INCLUDES ${PROJECT_SOURCE_DIR}/include/grt
-           SCRIPTS       ${CMAKE_CURRENT_BINARY_DIR}/grt_py.py
+           SCRIPTS       ${CMAKE_SWIG_OUTDIR}/grt_py.py
   )
 
   target_include_directories(grt_py

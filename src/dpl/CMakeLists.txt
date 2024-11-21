@@ -116,7 +116,7 @@ if (Python3_FOUND AND BUILD_PYTHON)
            SWIG_INCLUDES ${PROJECT_SOURCE_DIR}/include/dpl
                          ${ODB_HOME}/src/swig/common
                          ${ODB_HOME}/src/swig/python
-           SCRIPTS       ${CMAKE_CURRENT_BINARY_DIR}/dpl_py.py
+           SCRIPTS       ${CMAKE_SWIG_OUTDIR}/dpl_py.py
   )
 
   target_link_libraries(dpl_py

@@ -145,6 +145,4 @@ function(swig_lib)
         ${LANG_INIT}
     )
   endif()
-  install(TARGETS ${ARG_NAME} ${ARG_NAME}_py)
-
 endfunction()

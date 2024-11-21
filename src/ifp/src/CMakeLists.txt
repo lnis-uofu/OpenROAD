@@ -71,7 +71,7 @@ if (Python3_FOUND AND BUILD_PYTHON)
            I_FILE        InitFloorplan-py.i
            SWIG_INCLUDES ${ODB_HOME}/src/swig/common
                          ${ODB_HOME}/src/swig/python
-           SCRIPTS       ${CMAKE_CURRENT_BINARY_DIR}/ifp_py.py
+           SCRIPTS       ${CMAKE_SWIG_OUTDIR}/ifp_py.py
   )
 
   target_link_libraries(ifp_py

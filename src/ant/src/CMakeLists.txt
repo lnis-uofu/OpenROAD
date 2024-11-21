@@ -83,7 +83,7 @@ if (Python3_FOUND AND BUILD_PYTHON)
            SWIG_INCLUDES ${PROJECT_SOURCE_DIR}/../include
                          ${ODB_HOME}/src/swig/common
                          ${ODB_HOME}/src/swig/python
-           SCRIPTS       ${CMAKE_CURRENT_BINARY_DIR}/ant_py.py
+           SCRIPTS       ${CMAKE_SWIG_OUTDIR}/ant_py.py
   )
 
   target_include_directories(ant_py

@@ -70,7 +70,7 @@ if (Python3_FOUND AND BUILD_PYTHON)
            LANGUAGE      python
            I_FILE        src/finale-py.i
            SWIG_INCLUDES ${PROJECT_SOURCE_DIR}/include/fin
-           SCRIPTS       ${CMAKE_CURRENT_BINARY_DIR}/fin_py.py
+           SCRIPTS       ${CMAKE_SWIG_OUTDIR}/fin_py.py
   )
 
   target_link_libraries(fin_py
