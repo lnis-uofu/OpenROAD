@@ -41,6 +41,8 @@ cmake_policy(SET CMP0078 NEW)
 # Allows SWIG_MODULE_NAME to be set
 cmake_policy(SET CMP0086 NEW)
 
+set(CMAKE_SWIG_OUTDIR ${CMAKE_CURRENT_BINARY_DIR}/swig/openroad)
+
 # Allows <PackageName>_ROOT to be used
 cmake_policy(SET CMP0074 NEW)
 
