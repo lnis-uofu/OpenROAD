@@ -1,4 +1,3 @@
-# Consolidate all swig files into a single directory for installation
 # Sets up swig for a .i file and encode .tcl files
 # Arguments
 #   NAME <library>: the generated library name
