@@ -1,8 +1,4 @@
 # Consolidate all swig files into a single directory for installation
-set(CMAKE_SWIG_OUTDIR ${CMAKE_CURRENT_BINARY_DIR}/swig/openroad)
-file(COPY swig.py DESTINATION ${CMAKE_SWIG_OUTDIR}/__init__.py)
-file(COPY pyproject.toml DESTINATION ${CMAKE_SWIG_OUTDIR}/../pyproject.toml)
-
 # Sets up swig for a .i file and encode .tcl files
 # Arguments
 #   NAME <library>: the generated library name
@@ -21,7 +17,7 @@ function(swig_lib)
   set(options "")
   set(oneValueArgs I_FILE NAME NAMESPACE LANGUAGE RUNTIME_HEADER)
   set(multiValueArgs SWIG_INCLUDES SCRIPTS)
-  
+
   cmake_parse_arguments(
       ARG  # prefix on the parsed args
       "${options}"
@@ -116,7 +112,7 @@ function(swig_lib)
         Python3::Python
     )
   endif()
-  
+
   if (DEFINED ARG_RUNTIME_HEADER)
     add_custom_command(
       OUTPUT ${ARG_RUNTIME_HEADER}

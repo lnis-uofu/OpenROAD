@@ -49,6 +49,10 @@ list(APPEND CMAKE_PREFIX_PATH
   "/opt/or-tools/lib/cmake"
 )
 
+set(CMAKE_SWIG_OUTDIR ${CMAKE_CURRENT_BINARY_DIR}/swig/openroad)
+file(COPY cmake/swig.py DESTINATION ${CMAKE_SWIG_OUTDIR}/__init__.py)
+file(COPY cmake/pyproject.toml DESTINATION ${CMAKE_SWIG_OUTDIR}/../pyproject.toml)
+
 include("openroad")
 
 
@@ -500,3 +504,37 @@ add_custom_target(openroad_tags etags -o TAGS
   WORKING_DIRECTORY ${OPENROAD_HOME}/src
   DEPENDS ${OPENROAD_SOURCE} ${OPENROAD_HEADERS} ${OPENROAD_TCL_FILES}
 )
+
+# add_custom_target(swig_package
+# DEPENDS
+# ant ant_py
+# cts cts_py
+# dbSta
+# dft dft_py
+# dpl dpl_py
+# dpo dpo_py
+# drt drt_py
+# dst
+# fin fin_py
+# gpl gpl_py
+# grt grt_py
+# gui
+# ifp ifp_py
+# mpl mpl_py
+# mpl2 odb_py
+# odbtcl
+# pad
+# par par_py
+# pdn pdn_py
+# ppl ppl_py
+# psm psm_py
+# rcx
+# rcx_py
+# rmp rmp_py
+# rsz
+# stt stt_py
+# tap tap_py
+# upf
+# utl utl_py
+# openroad_swig openroad_swig_py
+# )
