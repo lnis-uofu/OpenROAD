@@ -539,3 +539,5 @@ add_custom_target(openroad_tags etags -o TAGS
 # utl utl_py
 # openroad_swig openroad_swig_py
 # )
+
+install(TARGETS openroad_swig_py)
