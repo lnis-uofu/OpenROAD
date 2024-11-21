@@ -146,7 +146,6 @@ function(swig_lib)
     )
   endif()
   install(TARGETS ${ARG_NAME}
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/openroad_swig
   )
 
 endfunction()
