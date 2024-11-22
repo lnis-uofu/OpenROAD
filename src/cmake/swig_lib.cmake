@@ -71,7 +71,7 @@ function(swig_lib)
 
   swig_add_library(${ARG_NAME}
     LANGUAGE ${ARG_LANGUAGE}
-    TYPE     SHARED
+    TYPE     STATIC
     SOURCES  ${ARG_I_FILE}
   )
 
