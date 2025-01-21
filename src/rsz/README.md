@@ -145,6 +145,22 @@ The `unset_dont_use` command reverses the `set_dont_use` command.
 unset_dont_use lib_cells
 ```
 
+### Reset Don't Use
+
+The `reset_dont_use` restores the default dont use list.
+
+```tcl
+reset_dont_use
+```
+
+### Report Don't Use
+
+The `report_dont_use` reports all the cells that are marked as dont use.
+
+```tcl
+report_dont_use
+```
+
 ### Set Don't Touch
 
 The `set_dont_touch` command prevents the resizer commands from
@@ -160,6 +176,14 @@ The `unset_dont_touch` command reverse the `set_dont_touch` command.
 
 ```tcl
 unset_dont_touch instances_nets
+```
+
+### Report Don't Touch
+
+The `report_dont_touch` reports all the instances and nets that are marked as dont touch.
+
+```tcl
+report_dont_touch
 ```
 
 ### Buffer Ports
@@ -225,6 +249,7 @@ repair_design
     [-cap_margin cap_margin]
     [-max_utilization util]
     [-buffer_gain gain_ratio]
+    [-match_cell_footprint]
     [-verbose]
 ```
 
@@ -237,6 +262,7 @@ repair_design
 | `-cap_margin` | Add a capactitance margin. The default value is `0`, the allowed values are integers `[0, 100]`. |
 | `-max_utilization` | Defines the percentage of core area used. |
 | `-buffer_gain` | Enables gain-based buffering with the given gain value. |
+| `-match_cell_footprint` | Obey the Liberty cell footprint when swapping gates. |
 | `-verbose` | Enable verbose logging on progress of the repair. |
 
 ### Repair Tie Fanout
@@ -289,6 +315,7 @@ repair_timing
     [-max_passes passes]
     [-max_utilization util]
     [-max_buffer_percent buffer_percent]
+    [-match_cell_footprint]
     [-verbose]
 ```
 
@@ -310,6 +337,7 @@ repair_timing
 | `-repair_tns` | Percentage of violating endpoints to repair (0-100). When `tns_end_percent` is zero, only the worst endpoint is repaired. When `tns_end_percent` is 100 (default), all violating endpoints are repaired. |
 | `-max_utilization` | Defines the percentage of core area used. |
 | `-max_buffer_percent` | Specify a maximum number of buffers to insert to repair hold violations as a percentage of the number of instances in the design. The default value is `20`, and the allowed values are integers `[0, 100]`. |
+| `-match_cell_footprint` | Obey the Liberty cell footprint when swapping gates. |
 | `-verbose` | Enable verbose logging of the repair progress. |
 
 Use`-recover_power` to specify the percent of paths with positive slack which
@@ -358,11 +386,19 @@ report_design_area
 
 ### Report Floating Nets
 
-The `report_floating_nets` command reports nets with only one pin connection.
+The `report_floating_nets` command reports nets with connected loads but no connected drivers.
 
 ```tcl
 report_floating_nets 
     [-verbose]
+```
+
+### Eliminate Dead Logic
+
+The `eliminate_dead_logic` command eliminates dead logic, i.e. it removes standard cell instances which can be removed without affecting the function of the design.
+
+```tcl
+eliminate_dead_logic
 ```
 
 #### Options

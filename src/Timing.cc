@@ -37,16 +37,18 @@
 
 #include <tcl.h>
 
+#include <vector>
+
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
-#include "ord/OpenRoad.hh"
-#include "sta/Search.hh"
-// #include "ord/Tech.h"
 #include "ord/Design.h"
+#include "ord/OpenRoad.hh"
+#include "ord/Tech.h"
 #include "rsz/Resizer.hh"
 #include "sta/Corner.hh"
 #include "sta/Liberty.hh"
+#include "sta/Search.hh"
 #include "sta/TimingArc.hh"
 #include "sta/TimingRole.hh"
 #include "utl/Logger.h"
@@ -59,14 +61,12 @@ Timing::Timing(Design* design) : design_(design)
 
 sta::dbSta* Timing::getSta()
 {
-  auto app = OpenRoad::openRoad();
-  return app->getSta();
+  return design_->getTech()->getSta();
 }
 
 std::pair<odb::dbITerm*, odb::dbBTerm*> Timing::staToDBPin(const sta::Pin* pin)
 {
-  ord::OpenRoad* openroad = ord::OpenRoad::openRoad();
-  sta::dbNetwork* db_network = openroad->getDbNetwork();
+  sta::dbNetwork* db_network = getSta()->getDbNetwork();
   odb::dbITerm* iterm;
   odb::dbBTerm* bterm;
   odb::dbModITerm* moditerm;
@@ -426,8 +426,7 @@ float Timing::dynamicPower(odb::dbInst* inst, sta::Corner* corner)
 
 void Timing::makeEquivCells()
 {
-  auto app = OpenRoad::openRoad();
-  rsz::Resizer* resizer = app->getResizer();
+  rsz::Resizer* resizer = design_->getResizer();
   resizer->makeEquivCells();
 }
 

@@ -354,6 +354,13 @@ proc unset_dont_use { args } {
   set_dont_use_cmd "unset_dont_use" $args 0
 }
 
+sta::define_cmd_args "reset_dont_use" {}
+
+proc reset_dont_use { args } {
+  sta::parse_key_args "reset_dont_use" args keys {} flags {}
+  rsz::reset_dont_use
+}
+
 proc set_dont_use_cmd { cmd cmd_args dont_use } {
   sta::check_argc_eq1 $cmd $cmd_args
   foreach lib_cell [sta::get_lib_cells_arg $cmd [lindex $cmd_args 0] sta::sta_warn] {
@@ -384,6 +391,24 @@ proc set_dont_touch_cmd { cmd cmd_args dont_touch } {
   foreach net $nets {
     rsz::set_dont_touch_net $net $dont_touch
   }
+}
+
+sta::define_cmd_args "report_dont_use" {}
+
+proc report_dont_use { args } {
+  sta::parse_key_args "report_dont_use" args keys {} flags {}
+  sta::check_argc_eq0 "report_dont_use" $args
+
+  rsz::report_dont_use
+}
+
+sta::define_cmd_args "report_dont_touch" {}
+
+proc report_dont_touch { args } {
+  sta::parse_key_args "report_dont_touch" args keys {} flags {}
+  sta::check_argc_eq0 "report_dont_touch" $args
+
+  rsz::report_dont_touch
 }
 
 sta::define_cmd_args "buffer_ports" {[-inputs] [-outputs]\
@@ -438,12 +463,13 @@ sta::define_cmd_args "repair_design" {[-max_wire_length max_wire_length] \
                                       [-slew_margin slack_margin] \
                                       [-cap_margin cap_margin] \
                                       [-buffer_gain gain] \
+                                      [-match_cell_footprint] \
                                       [-verbose]}
 
 proc repair_design { args } {
   sta::parse_key_args "repair_design" args \
     keys {-max_wire_length -max_utilization -slew_margin -cap_margin -buffer_gain} \
-    flags {-verbose}
+    flags {-match_cell_footprint -verbose}
 
   set max_wire_length [rsz::parse_max_wire_length keys]
   set slew_margin [rsz::parse_percent_margin_arg "-slew_margin" keys]
@@ -458,8 +484,10 @@ proc repair_design { args } {
   sta::check_argc_eq0 "repair_design" $args
   rsz::check_parasitics
   set max_wire_length [rsz::check_max_wire_length $max_wire_length]
+  set match_cell_footprint [info exists flags(-match_cell_footprint)]
   set verbose [info exists flags(-verbose)]
-  rsz::repair_design_cmd $max_wire_length $slew_margin $cap_margin $buffer_gain $verbose
+  rsz::repair_design_cmd $max_wire_length $slew_margin $cap_margin \
+    $buffer_gain $match_cell_footprint $verbose
 }
 
 sta::define_cmd_args "repair_clock_nets" {[-max_wire_length max_wire_length]}
@@ -536,6 +564,7 @@ sta::define_cmd_args "repair_timing" {[-setup] [-hold]\
                                         [-max_passes passes]\
                                         [-max_buffer_percent buffer_percent]\
                                         [-max_utilization util] \
+                                        [-match_cell_footprint] \
                                         [-verbose]}
 
 proc repair_timing { args } {
@@ -544,7 +573,8 @@ proc repair_timing { args } {
             -libraries -max_utilization -max_buffer_percent \
             -recover_power -repair_tns -max_passes} \
     flags {-setup -hold -allow_setup_violations -skip_pin_swap -skip_gate_cloning \
-           -skip_buffering -skip_buffer_removal -skip_last_gasp -verbose}
+           -skip_buffering -skip_buffer_removal -skip_last_gasp -match_cell_footprint \
+           -verbose}
 
   set setup [info exists flags(-setup)]
   set hold [info exists flags(-hold)]
@@ -606,23 +636,35 @@ proc repair_timing { args } {
   if { [info exists keys(-max_passes)] } {
     set max_passes $keys(-max_passes)
   }
+
+  set match_cell_footprint [info exists flags(-match_cell_footprint)]
+  if { [design_is_routed] } {
+    rsz::set_parasitics_src "detailed_routing"
+  }
+
   sta::check_argc_eq0 "repair_timing" $args
   rsz::check_parasitics
+
+  set recovered_power 0
+  set repaired_setup 0
+  set repaired_hold 0
   if { $recover_power_percent >= 0 } {
-    rsz::recover_power $recover_power_percent
+    set recovered_power [rsz::recover_power $recover_power_percent $match_cell_footprint]
   } else {
     if { $setup } {
-      rsz::repair_setup $setup_margin $repair_tns_end_percent $max_passes \
-        $verbose \
+      set repaired_setup [rsz::repair_setup $setup_margin $repair_tns_end_percent $max_passes \
+        $match_cell_footprint $verbose \
         $skip_pin_swap $skip_gate_cloning $skip_buffering \
-        $skip_buffer_removal $skip_last_gasp
+        $skip_buffer_removal $skip_last_gasp]
     }
     if { $hold } {
-      rsz::repair_hold $setup_margin $hold_margin \
+      set repaired_hold [rsz::repair_hold $setup_margin $hold_margin \
         $allow_setup_violations $max_buffer_percent $max_passes \
-        $verbose
+        $match_cell_footprint $verbose]
     }
   }
+
+  return [expr $recovered_power || $repaired_setup || $repaired_hold]
 }
 
 ################################################################
@@ -682,6 +724,11 @@ sta::proc_redirect report_long_wires {
   sta::check_argc_eq1 "report_long_wires" $args
   set count [lindex $args 0]
   rsz::report_long_wires_cmd $count $digits
+}
+
+sta::define_cmd_args "eliminate_dead_logic" {}
+proc eliminate_dead_logic { } {
+  rsz::eliminate_dead_logic_cmd 1
 }
 
 namespace eval rsz {
@@ -752,7 +799,7 @@ proc check_corner_wire_caps { } {
   set have_rc 1
   foreach corner [sta::corners] {
     if { [rsz::wire_signal_capacitance $corner] == 0.0 } {
-      utl::warn RSZ 14 "wire capacitance for corner [$corner name] is zero.\
+      utl::warn RSZ 18 "wire capacitance for corner [$corner name] is zero.\
         Use the set_wire_rc command to set wire resistance and capacitance."
       set have_rc 0
     }

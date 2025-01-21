@@ -41,8 +41,6 @@
 
 #include <boost/geometry.hpp>
 #include <boost/geometry/index/rtree.hpp>
-#include <boost/property_tree/json_parser.hpp>
-#include <boost/property_tree/ptree.hpp>
 #include <functional>
 #include <map>
 #include <memory>
@@ -155,13 +153,21 @@ class Opendp
   void checkPlacement(bool verbose,
                       bool disallow_one_site_gaps = false,
                       const string& report_file_name = "");
-  void fillerPlacement(dbMasterSeq* filler_masters, const char* prefix);
+  void fillerPlacement(dbMasterSeq* filler_masters,
+                       const char* prefix,
+                       bool verbose);
   void removeFillers();
   void optimizeMirroring();
 
   // Place decap cells
   void addDecapMaster(dbMaster* decap_master, double decap_cap);
   void insertDecapCells(double target, IRDropByPoint& psm_ir_drops);
+
+  // Get the instance adjacent to the left or right of a given instance
+  dbInst* getAdjacentInstance(dbInst* inst, bool left) const;
+
+  // Find a cluster of instances that are touching each other
+  std::vector<dbInst*> getAdjacentInstancesCluster(dbInst* inst) const;
 
  private:
   using bgPoint
@@ -186,9 +192,9 @@ class Opendp
   DbuPt pointOffMacro(const Cell& cell);
   void convertDbToCell(dbInst* db_inst, Cell& cell);
   // Return error count.
-  void processViolationsPtree(boost::property_tree::ptree& entry,
-                              const std::vector<Cell*>& failures,
-                              const std::string& violation_type = "") const;
+  void saveViolations(const std::vector<Cell*>& failures,
+                      odb::dbMarkerCategory* category,
+                      const std::string& violation_type = "") const;
   void importDb();
   void importClear();
   Rect getBbox(dbInst* inst);
@@ -288,14 +294,14 @@ class Opendp
       bool verbose,
       const std::function<void(Cell* cell)>& report_failure) const;
   void reportOverlapFailure(Cell* cell) const;
-  void writeJsonReport(const string& filename,
-                       const vector<Cell*>& placed_failures,
-                       const vector<Cell*>& in_rows_failures,
-                       const vector<Cell*>& overlap_failures,
-                       const vector<Cell*>& one_site_gap_failures,
-                       const vector<Cell*>& site_align_failures,
-                       const vector<Cell*>& region_placement_failures,
-                       const vector<Cell*>& placement_failures);
+  void saveFailures(const vector<Cell*>& placed_failures,
+                    const vector<Cell*>& in_rows_failures,
+                    const vector<Cell*>& overlap_failures,
+                    const vector<Cell*>& one_site_gap_failures,
+                    const vector<Cell*>& site_align_failures,
+                    const vector<Cell*>& region_placement_failures,
+                    const vector<Cell*>& placement_failures);
+  void writeJsonReport(const string& filename);
 
   void rectDist(const Cell* cell,
                 const Rect& rect,
@@ -365,7 +371,7 @@ class Opendp
   // Filler placement.
   // gap (in sites) -> seq of masters by implant
   map<dbTechLayer*, GapFillers> gap_fillers_;
-  int filler_count_ = 0;
+  map<dbMaster*, int> filler_count_;
   bool have_fillers_ = false;
   bool have_one_site_cells_ = false;
 

@@ -33,6 +33,8 @@
 
 #include "SACoreHardMacro.h"
 
+#include <vector>
+
 #include "Mpl2Observer.h"
 #include "utl/Logger.h"
 
@@ -83,6 +85,19 @@ SACoreHardMacro::SACoreHardMacro(
                                         logger)
 {
   flip_prob_ = flip_prob;
+}
+
+void SACoreHardMacro::run()
+{
+  if (graphics_) {
+    graphics_->startSA();
+  }
+
+  fastSA();
+
+  if (graphics_) {
+    graphics_->endSA(calNormCost());
+  }
 }
 
 float SACoreHardMacro::getAreaPenalty() const

@@ -6,7 +6,7 @@ tech = Tech()
 tech.readLiberty("Nangate45/Nangate45_typ.lib")
 tech.readLef("Nangate45/Nangate45.lef")
 
-design = Design(tech)
+design = helpers.make_design(tech)
 design.readDef("gcd_placed.def")
 
 # read_sdc is defined in sta/tcl/Sdc.tcl (not yet wrapped)
@@ -27,10 +27,10 @@ rmp_aux.restructure(
     design,
     liberty_file_name="Nangate45/Nangate45_typ.lib",
     target="area",
+    workdir_name="results/python/gcd",
     abc_logfile="results/abc_rcon.log",
     tielo_port=tielo,
     tiehi_port=tiehi,
-    workdir_name="./results",
 )
 
 design.evalTclString("report_design_area")

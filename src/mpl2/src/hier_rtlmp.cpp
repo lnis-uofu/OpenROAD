@@ -38,6 +38,7 @@
 #include <iostream>
 #include <queue>
 #include <thread>
+#include <vector>
 
 #include "Mpl2Observer.h"
 #include "SACoreHardMacro.h"
@@ -69,12 +70,10 @@ HierRTLMP::~HierRTLMP() = default;
 // Constructors
 HierRTLMP::HierRTLMP(sta::dbNetwork* network,
                      odb::dbDatabase* db,
-                     sta::dbSta* sta,
                      utl::Logger* logger,
                      par::PartitionMgr* tritonpart)
     : network_(network),
       db_(db),
-      sta_(sta),
       logger_(logger),
       tritonpart_(tritonpart),
       tree_(std::make_unique<PhysicalHierarchy>())
@@ -130,10 +129,7 @@ void HierRTLMP::setGlobalFence(float fence_lx,
                                float fence_ux,
                                float fence_uy)
 {
-  global_fence_lx_ = fence_lx;
-  global_fence_ly_ = fence_ly;
-  global_fence_ux_ = fence_ux;
-  global_fence_uy_ = fence_uy;
+  tree_->global_fence = Rect(fence_lx, fence_ly, fence_ux, fence_uy);
 }
 
 void HierRTLMP::setHaloWidth(float halo_width)
@@ -144,6 +140,12 @@ void HierRTLMP::setHaloWidth(float halo_width)
 void HierRTLMP::setHaloHeight(float halo_height)
 {
   tree_->halo_height = halo_height;
+}
+
+void HierRTLMP::setGuidanceRegions(
+    const std::map<odb::dbInst*, Rect>& guidance_regions)
+{
+  guides_ = guidance_regions;
 }
 
 // Options related to clustering
@@ -249,8 +251,19 @@ void HierRTLMP::run()
     resetSAParameters();
   }
 
+  std::unique_ptr<Mpl2Observer> save_graphics;
+  if (is_debug_only_final_result_) {
+    save_graphics = std::move(graphics_);
+  }
+
   runCoarseShaping();
   runHierarchicalMacroPlacement();
+
+  if (save_graphics) {
+    graphics_ = std::move(save_graphics);
+    graphics_->setMaxLevel(tree_->max_level);
+    graphics_->drawResult();
+  }
 
   Pusher pusher(logger_, tree_->root.get(), block_, boundary_to_io_blockage_);
   pusher.pushMacrosToCoreBoundaries();
@@ -314,11 +327,6 @@ void HierRTLMP::runHierarchicalMacroPlacement()
   } else {
     runHierarchicalMacroPlacementWithoutBusPlanning(tree_->root.get());
   }
-
-  if (graphics_) {
-    graphics_->setMaxLevel(tree_->max_level);
-    graphics_->drawResult();
-  }
 }
 
 void HierRTLMP::resetSAParameters()
@@ -329,7 +337,6 @@ void HierRTLMP::resetSAParameters()
   exchange_swap_prob_ = 0.2;
   flip_prob_ = 0.2;
   resize_prob_ = 0.0;
-  guidance_weight_ = 0.0;
   fence_weight_ = 0.0;
   boundary_weight_ = 0.0;
   notch_weight_ = 0.0;
@@ -360,31 +367,15 @@ void HierRTLMP::setRootShapes()
 {
   auto root_soft_macro = std::make_unique<SoftMacro>(tree_->root.get());
 
-  const float core_lx
-      = static_cast<float>(block_->dbuToMicrons(block_->getCoreArea().xMin()));
-  const float root_lx = std::max(core_lx, global_fence_lx_);
-
-  const float core_ly
-      = static_cast<float>(block_->dbuToMicrons(block_->getCoreArea().yMin()));
-  const float root_ly = std::max(core_ly, global_fence_ly_);
-
-  const float core_ux
-      = static_cast<float>(block_->dbuToMicrons(block_->getCoreArea().xMax()));
-  const float root_ux = std::min(core_ux, global_fence_ux_);
-
-  const float core_uy
-      = static_cast<float>(block_->dbuToMicrons(block_->getCoreArea().yMax()));
-  const float root_uy = std::min(core_uy, global_fence_uy_);
-
-  const float root_area = (root_ux - root_lx) * (root_uy - root_ly);
-  const float root_width = root_ux - root_lx;
+  const float root_area = tree_->floorplan_shape.getArea();
+  const float root_width = tree_->floorplan_shape.getWidth();
   const std::vector<std::pair<float, float>> root_width_list
       = {std::pair<float, float>(root_width, root_width)};
 
   root_soft_macro->setShapes(root_width_list, root_area);
   root_soft_macro->setWidth(root_width);  // This will set height automatically
-  root_soft_macro->setX(root_lx);
-  root_soft_macro->setY(root_ly);
+  root_soft_macro->setX(tree_->floorplan_shape.xMin());
+  root_soft_macro->setY(tree_->floorplan_shape.yMin());
   tree_->root->setSoftMacro(std::move(root_soft_macro));
 }
 
@@ -449,6 +440,11 @@ void HierRTLMP::calculateChildrenTilings(Cluster* parent)
                "Done visiting children of {}",
                parent->getName());
   }
+
+  if (graphics_) {
+    graphics_->setCurrentCluster(parent);
+  }
+
   // if the current cluster is the root cluster,
   // the shape is fixed, i.e., the fixed die.
   // Thus, we do not need to determine the shapes for it
@@ -698,6 +694,10 @@ void HierRTLMP::calculateMacroTilings(Cluster* cluster)
   if (cluster->isArrayOfInterconnectedMacros()) {
     setTightPackingTilings(cluster);
     return;
+  }
+
+  if (graphics_) {
+    graphics_->setCurrentCluster(cluster);
   }
 
   // otherwise call simulated annealing to determine tilings
@@ -1038,18 +1038,10 @@ HierRTLMP::IOSpans HierRTLMP::computeIOSpans()
 float HierRTLMP::computeIOBlockagesDepth(const IOSpans& io_spans)
 {
   float sum_length = 0.0;
-  int num_hor_access = 0;
-  int num_ver_access = 0;
 
   for (auto& [pin_access, length] : io_spans) {
     if (length.second > length.first) {
       sum_length += std::abs(length.second - length.first);
-
-      if (pin_access == R || pin_access == L) {
-        num_hor_access++;
-      } else {
-        num_ver_access++;
-      }
     }
   }
 
@@ -1159,17 +1151,17 @@ void HierRTLMP::adjustCongestionWeight()
 // summation of pin access size is equal to the area of standard-cell clusters
 void HierRTLMP::runHierarchicalMacroPlacement(Cluster* parent)
 {
-  // base case
-  // If the parent cluster has no macros (parent cluster is a StdCellCluster or
-  // IOCluster) We do not need to determine the positions and shapes of its
-  // children clusters
-  if (parent->getNumMacro() == 0) {
-    return;
-  }
-  // If the parent is a HardMacroCluster
   if (parent->getClusterType() == HardMacroCluster) {
     placeMacros(parent);
     return;
+  }
+
+  if (parent->isLeaf()) {  // Cover IO Clusters && Leaf Std Cells
+    return;
+  }
+
+  if (graphics_) {
+    graphics_->setCurrentCluster(parent);
   }
 
   for (auto& cluster : parent->getChildren()) {
@@ -1242,15 +1234,18 @@ void HierRTLMP::runHierarchicalMacroPlacement(Cluster* parent)
     if (cluster->getClusterType() == StdCellCluster) {
       continue;
     }
-    Rect fence(-1.0, -1.0, -1.0, -1.0);
-    Rect guide(-1.0, -1.0, -1.0, -1.0);
+    Rect fence, guide;
+    fence.mergeInit();
+    guide.mergeInit();
     const std::vector<HardMacro*> hard_macros = cluster->getHardMacros();
     for (auto& hard_macro : hard_macros) {
       if (fences_.find(hard_macro->getName()) != fences_.end()) {
         fence.merge(fences_[hard_macro->getName()]);
       }
-      if (guides_.find(hard_macro->getName()) != guides_.end()) {
-        guide.merge(guides_[hard_macro->getName()]);
+
+      auto itr = guides_.find(hard_macro->getInst());
+      if (itr != guides_.end()) {
+        guide.merge(itr->second);
       }
     }
 
@@ -1267,6 +1262,11 @@ void HierRTLMP::runHierarchicalMacroPlacement(Cluster* parent)
       // current macro id is macros.size() - 1
       guides[macros.size() - 1] = guide;
     }
+  }
+
+  if (graphics_) {
+    graphics_->setGuides(guides);
+    graphics_->setFences(fences);
   }
 
   clustering_engine_->updateConnections();
@@ -2059,16 +2059,12 @@ void HierRTLMP::runHierarchicalMacroPlacement(Cluster* parent)
   }
 
   updateChildrenRealLocation(parent, outline.xMin(), outline.yMin());
+  sa_containers.clear();
 
   // Continue cluster placement on children
   for (auto& cluster : parent->getChildren()) {
-    if (cluster->getClusterType() == MixedCluster
-        || cluster->getClusterType() == HardMacroCluster) {
-      runHierarchicalMacroPlacement(cluster.get());
-    }
+    runHierarchicalMacroPlacement(cluster.get());
   }
-
-  sa_containers.clear();
 
   clustering_engine_->updateInstancesAssociation(parent);
 }
@@ -2140,20 +2136,19 @@ void HierRTLMP::reportSAWeights()
   logger_->report("Macro Blockage = {}\n", macro_blockage_weight_);
 }
 
-// Multilevel macro placement without bus planning
 void HierRTLMP::runHierarchicalMacroPlacementWithoutBusPlanning(Cluster* parent)
 {
-  // base case
-  // If the parent cluster has no macros (parent cluster is a StdCellCluster or
-  // IOCluster) We do not need to determine the positions and shapes of its
-  // children clusters
-  if (parent->getNumMacro() == 0) {
-    return;
-  }
-  // If the parent is a HardMacroCluster
   if (parent->getClusterType() == HardMacroCluster) {
     placeMacros(parent);
     return;
+  }
+
+  if (parent->isLeaf()) {  // Cover IO Clusters && Leaf Std Cells
+    return;
+  }
+
+  if (graphics_) {
+    graphics_->setCurrentCluster(parent);
   }
 
   for (auto& cluster : parent->getChildren()) {
@@ -2226,15 +2221,17 @@ void HierRTLMP::runHierarchicalMacroPlacementWithoutBusPlanning(Cluster* parent)
     if (cluster->getClusterType() == StdCellCluster) {
       continue;
     }
-    Rect fence(-1.0, -1.0, -1.0, -1.0);
-    Rect guide(-1.0, -1.0, -1.0, -1.0);
+    Rect fence, guide;
+    fence.mergeInit();
+    guide.mergeInit();
     const std::vector<HardMacro*> hard_macros = cluster->getHardMacros();
     for (auto& hard_macro : hard_macros) {
       if (fences_.find(hard_macro->getName()) != fences_.end()) {
         fence.merge(fences_[hard_macro->getName()]);
       }
-      if (guides_.find(hard_macro->getName()) != guides_.end()) {
-        guide.merge(guides_[hard_macro->getName()]);
+      auto itr = guides_.find(hard_macro->getInst());
+      if (itr != guides_.end()) {
+        guide.merge(itr->second);
       }
     }
 
@@ -2252,6 +2249,11 @@ void HierRTLMP::runHierarchicalMacroPlacementWithoutBusPlanning(Cluster* parent)
       // current macro id is macros.size() - 1
       guides[macros.size() - 1] = guide;
     }
+  }
+
+  if (graphics_) {
+    graphics_->setGuides(guides);
+    graphics_->setFences(fences);
   }
 
   const int num_of_macros_to_place = static_cast<int>(macros.size());
@@ -2625,10 +2627,7 @@ void HierRTLMP::runHierarchicalMacroPlacementWithoutBusPlanning(Cluster* parent)
 
   // Continue cluster placement on children
   for (auto& cluster : parent->getChildren()) {
-    if (cluster->getClusterType() == MixedCluster
-        || cluster->getClusterType() == HardMacroCluster) {
-      runHierarchicalMacroPlacementWithoutBusPlanning(cluster.get());
-    }
+    runHierarchicalMacroPlacementWithoutBusPlanning(cluster.get());
   }
 
   clustering_engine_->updateInstancesAssociation(parent);
@@ -2640,23 +2639,22 @@ void HierRTLMP::runHierarchicalMacroPlacementWithoutBusPlanning(Cluster* parent)
 // This should be only be used in mixed clusters.
 void HierRTLMP::runEnhancedHierarchicalMacroPlacement(Cluster* parent)
 {
-  // base case
-  // If the parent cluster has no macros (parent cluster is a StdCellCluster or
-  // IOCluster) We do not need to determine the positions and shapes of its
-  // children clusters
-  if (parent->getNumMacro() == 0) {
-    return;
-  }
-  // If the parent is the not the mixed cluster
   if (parent->getClusterType() != MixedCluster) {
     return;
   }
-  // If the parent has children of mixed cluster
+
+  // We only run this enhanced macro placement version if there are no
+  // further levels ahead in the current branch of the physical hierarchy.
   for (auto& cluster : parent->getChildren()) {
     if (cluster->getClusterType() == MixedCluster) {
       return;
     }
   }
+
+  if (graphics_) {
+    graphics_->setCurrentCluster(parent);
+  }
+
   // Place children clusters
   // map children cluster to soft macro
   for (auto& cluster : parent->getChildren()) {
@@ -2724,15 +2722,18 @@ void HierRTLMP::runEnhancedHierarchicalMacroPlacement(Cluster* parent)
     if (cluster->getClusterType() == StdCellCluster) {
       continue;
     }
-    Rect fence(-1.0, -1.0, -1.0, -1.0);
-    Rect guide(-1.0, -1.0, -1.0, -1.0);
+    Rect fence, guide;
+    fence.mergeInit();
+    guide.mergeInit();
     const std::vector<HardMacro*> hard_macros = cluster->getHardMacros();
     for (auto& hard_macro : hard_macros) {
       if (fences_.find(hard_macro->getName()) != fences_.end()) {
         fence.merge(fences_[hard_macro->getName()]);
       }
-      if (guides_.find(hard_macro->getName()) != guides_.end()) {
-        guide.merge(guides_[hard_macro->getName()]);
+
+      auto itr = guides_.find(hard_macro->getInst());
+      if (itr != guides_.end()) {
+        guide.merge(itr->second);
       }
     }
 
@@ -2749,6 +2750,11 @@ void HierRTLMP::runEnhancedHierarchicalMacroPlacement(Cluster* parent)
       // current macro id is macros.size() - 1
       guides[macros.size() - 1] = guide;
     }
+  }
+
+  if (graphics_) {
+    graphics_->setGuides(guides);
+    graphics_->setFences(fences);
   }
 
   const int macros_to_place = static_cast<int>(macros.size());
@@ -3372,6 +3378,10 @@ void HierRTLMP::placeMacros(Cluster* cluster)
              "Place macros in cluster: {}",
              cluster->getName());
 
+  if (graphics_) {
+    graphics_->setCurrentCluster(cluster);
+  }
+
   UniqueClusterVector macro_clusters;  // needed to calculate connections
   std::vector<HardMacro*> hard_macros = cluster->getHardMacros();
   std::vector<HardMacro> sa_macros;
@@ -3388,6 +3398,10 @@ void HierRTLMP::placeMacros(Cluster* cluster)
   std::map<int, Rect> fences;
   std::map<int, Rect> guides;
   computeFencesAndGuides(hard_macros, outline, fences, guides);
+  if (graphics_) {
+    graphics_->setGuides(guides);
+    graphics_->setFences(fences);
+  }
 
   clustering_engine_->updateConnections();
 
@@ -3601,8 +3615,9 @@ void HierRTLMP::computeFencesAndGuides(
       fences[i].relocate(
           outline.xMin(), outline.yMin(), outline.xMax(), outline.yMax());
     }
-    if (guides_.find(hard_macros[i]->getName()) != guides_.end()) {
-      guides[i] = guides_[hard_macros[i]->getName()];
+    auto itr = guides_.find(hard_macros[i]->getInst());
+    if (itr != guides_.end()) {
+      guides[i] = itr->second;
       guides[i].relocate(
           outline.xMin(), outline.yMin(), outline.xMax(), outline.yMax());
     }
@@ -3961,7 +3976,7 @@ void HierRTLMP::flipRealMacro(odb::dbInst* macro, const bool& is_vertical_flip)
 void HierRTLMP::adjustRealMacroOrientation(const bool& is_vertical_flip)
 {
   for (odb::dbInst* inst : block_->getInsts()) {
-    if (!inst->isBlock()) {
+    if (!inst->isBlock() || ClusteringEngine::isIgnoredInst(inst)) {
       continue;
     }
 
@@ -4088,6 +4103,11 @@ void HierRTLMP::setDebugShowBundledNets(bool show_bundled_nets)
   graphics_->setShowBundledNets(show_bundled_nets);
 }
 
+void HierRTLMP::setDebugShowClustersIds(bool show_clusters_ids)
+{
+  graphics_->setShowClustersIds(show_clusters_ids);
+}
+
 void HierRTLMP::setDebugSkipSteps(bool skip_steps)
 {
   graphics_->setSkipSteps(skip_steps);
@@ -4096,6 +4116,12 @@ void HierRTLMP::setDebugSkipSteps(bool skip_steps)
 void HierRTLMP::setDebugOnlyFinalResult(bool only_final_result)
 {
   graphics_->setOnlyFinalResult(only_final_result);
+  is_debug_only_final_result_ = only_final_result;
+}
+
+void HierRTLMP::setDebugTargetClusterId(const int target_cluster_id)
+{
+  graphics_->setTargetClusterId(target_cluster_id);
 }
 
 odb::Rect HierRTLMP::micronsToDbu(const Rect& micron_rect)
@@ -4526,11 +4552,7 @@ LayerParameters Snapper::computeLayerParameters(
   odb::dbTrackGrid* track_grid = block->findTrackGrid(layer);
 
   if (track_grid) {
-    std::vector<int> coordinate_grid;
-    getTrackGrid(track_grid, coordinate_grid, target_direction);
-
-    params.offset = coordinate_grid[0];
-    params.pitch = coordinate_grid[1] - coordinate_grid[0];
+    getTrackGrid(track_grid, params.offset, params.pitch, target_direction);
   } else {
     logger_->error(
         MPL, 39, "No track-grid found for layer {}", layer->getName());
@@ -4578,13 +4600,16 @@ int Snapper::getPinWidth(odb::dbITerm* pin,
 }
 
 void Snapper::getTrackGrid(odb::dbTrackGrid* track_grid,
-                           std::vector<int>& coordinate_grid,
+                           int& origin,
+                           int& step,
                            const odb::dbTechLayerDir& target_direction)
 {
+  // TODO: handle multiple patterns
+  int count;
   if (target_direction == odb::dbTechLayerDir::VERTICAL) {
-    track_grid->getGridX(coordinate_grid);
+    track_grid->getGridPatternX(0, origin, count, step);
   } else {
-    track_grid->getGridY(coordinate_grid);
+    track_grid->getGridPatternY(0, origin, count, step);
   }
 }
 
@@ -4610,54 +4635,42 @@ void Snapper::attemptSnapToExtraLayers(
     const LayerParameters& snap_layer_params,
     const odb::dbTechLayerDir& target_direction)
 {
-  const int total_number_of_layers
-      = static_cast<int>(layers_data.layer_to_pin.size());
-  const int total_attempts = 5;
-  int remaining_attempts = total_attempts;
+  // Calculate LCM from the layers pitches to define the search
+  // range
+  int lcm = 1;
+  for (const auto& [layer, params] : layers_data.layer_to_params) {
+    lcm = std::lcm(lcm, params.pitch);
+  }
+  const int pitch = snap_layer_params.pitch;
+  const int total_attempts = lcm / snap_layer_params.pitch;
+
+  const int total_layers = static_cast<int>(layers_data.layer_to_pin.size());
 
   int best_origin = origin;
-  int best_number_of_snapped_layers = 1;
-  int new_origin = origin;
-  bool all_layers_snapped = false;
+  int best_snapped_layers = 1;
 
-  while (remaining_attempts > 0) {
-    const bool is_first_attempt = remaining_attempts == total_attempts;
-    // The pins may already be aligned for all extra layers (in that case,
-    // we don't need to move the macro at all), hence, we use the first
-    // attempt to check if there are in fact any extra layers to snap.
-    if (!is_first_attempt) {
-      // Move one track ahead.
-      new_origin += snap_layer_params.pitch;
-      setOrigin(new_origin, target_direction);
-    }
+  for (int i = 0; i <= total_attempts; i++) {
+    // Alternates steps from positive to negative incrementally
+    int steps = (i % 2 == 1) ? (i + 1) / 2 : -(i / 2);
 
-    int curr_number_of_snapped_layers = 1;
-    for (const auto [layer, pin] : layers_data.layer_to_pin) {
-      if (layer == layers_data.snap_layer) {
-        continue;
-      }
-
+    setOrigin(origin + (pitch * steps), target_direction);
+    int snapped_layers = 0;
+    for (const auto& [layer, pin] : layers_data.layer_to_pin) {
       if (pinsAreAlignedWithTrackGrid(
               pin, layers_data.layer_to_params.at(layer), target_direction)) {
-        ++curr_number_of_snapped_layers;
+        ++snapped_layers;
       }
+    }
 
-      if (curr_number_of_snapped_layers == total_number_of_layers) {
-        all_layers_snapped = true;
+    if (snapped_layers > best_snapped_layers) {
+      best_snapped_layers = snapped_layers;
+      best_origin = origin + (pitch * steps);
+
+      // Stop search if all layers are snapped
+      if (total_layers == best_snapped_layers) {
         break;
       }
     }
-
-    if (all_layers_snapped) {
-      return;
-    }
-
-    if (curr_number_of_snapped_layers > best_number_of_snapped_layers) {
-      best_number_of_snapped_layers = curr_number_of_snapped_layers;
-      best_origin = new_origin;
-    }
-
-    --remaining_attempts;
   }
 
   setOrigin(best_origin, target_direction);

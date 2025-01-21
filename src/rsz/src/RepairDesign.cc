@@ -35,6 +35,8 @@
 
 #include "RepairDesign.hh"
 
+#include <vector>
+
 #include "BufferedNet.hh"
 #include "db_sta/dbNetwork.hh"
 #include "rsz/Resizer.hh"
@@ -207,7 +209,8 @@ void RepairDesign::repairDesign(
     Pin* drvr_pin = drvr->pin();
     Net* net = network_->isTopLevelPort(drvr_pin)
                    ? network_->net(network_->term(drvr_pin))
-                   : network_->net(drvr_pin);
+                   // hier fix
+                   : db_network_->dbToSta(db_network_->flatNet(drvr_pin));
     dbNet* net_db = db_network_->staToDb(net);
     bool debug = (drvr_pin == resizer_->debug_pin_);
     if (debug) {
@@ -485,7 +488,7 @@ bool RepairDesign::performGainBuffering(Net* net,
     const Network* network_;
 
    public:
-    PinRequiredHigher(const Network* network) : network_(network){};
+    PinRequiredHigher(const Network* network) : network_(network) {}
 
     bool operator()(const EnqueuedPin& a, const EnqueuedPin& b) const
     {
@@ -1907,15 +1910,15 @@ LibertyCell* RepairDesign::findBufferUnderSlew(float max_slew, float load_cap)
 {
   LibertyCell* min_slew_buffer = resizer_->buffer_lowest_drive_;
   float min_slew = INF;
-  LibertyCellSeq* equiv_cells
-      = sta_->equivCells(resizer_->buffer_lowest_drive_);
-  if (equiv_cells) {
-    sort(equiv_cells,
+  LibertyCellSeq swappable_cells
+      = resizer_->getSwappableCells(resizer_->buffer_lowest_drive_);
+  if (!swappable_cells.empty()) {
+    sort(swappable_cells,
          [this](const LibertyCell* buffer1, const LibertyCell* buffer2) {
            return resizer_->bufferDriveResistance(buffer1)
                   > resizer_->bufferDriveResistance(buffer2);
          });
-    for (LibertyCell* buffer : *equiv_cells) {
+    for (LibertyCell* buffer : swappable_cells) {
       if (!resizer_->dontUse(buffer) && resizer_->isLinkCell(buffer)) {
         float slew = resizer_->bufferSlew(
             buffer, load_cap, resizer_->tgt_slew_dcalc_ap_);

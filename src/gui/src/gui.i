@@ -288,6 +288,15 @@ void save_clocktree_image(const char* filename, const char* clock_name, const ch
   gui->saveClockTreeImage(clock_name, filename, corner, width_px, height_px);
 }
 
+void select_clockviewer_clock(const char* clock_name)
+{
+  if (!check_gui("select_clockviewer_clock")) {
+    return;
+  }
+  auto gui = gui::Gui::get();
+  gui->selectClockviewerClock(clock_name);
+}
+
 void clear_rulers()
 {
   if (!check_gui("clear_rulers")) {
@@ -712,6 +721,57 @@ void trigger_action(const std::string& name)
 bool supported()
 {
   return true;
+}
+
+void minimize()
+{
+  if (!check_gui("minimize")) {
+    return;
+  }
+  auto gui = gui::Gui::get();
+  gui->minimize();
+}
+
+void unminimize()
+{
+  if (!check_gui("unminimize")) {
+    return;
+  }
+  auto gui = gui::Gui::get();
+  gui->unminimize();
+}
+
+void show_help(const std::string& item)
+{
+  if (!check_gui("show_help")) {
+    return;
+  }
+  auto gui = gui::Gui::get();
+  gui->selectHelp(item);
+}
+
+void select_chart(const std::string& name)
+{
+  if (!check_gui("select_chart")) {
+    return;
+  }
+  auto gui = gui::Gui::get();
+  gui->selectChart(name);
+}
+
+void update_timing_report()
+{
+  if (!check_gui("update_timing_report")) {
+    return;
+  }
+  auto gui = gui::Gui::get();
+  gui->updateTimingReport();
+}
+
+void set_title(std::string title)
+{
+  auto gui = gui::Gui::get();
+  gui->setMainWindowTitle(title);
 }
 
 %} // inline

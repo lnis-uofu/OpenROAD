@@ -37,6 +37,7 @@
 
 #include <limits>
 #include <string>
+#include <vector>
 
 #include "Mpl2Observer.h"
 #include "clusterEngine.h"
@@ -99,7 +100,6 @@ class HierRTLMP
  public:
   HierRTLMP(sta::dbNetwork* network,
             odb::dbDatabase* db,
-            sta::dbSta* sta,
             utl::Logger* logger,
             par::PartitionMgr* tritonpart);
   ~HierRTLMP();
@@ -115,8 +115,9 @@ class HierRTLMP
                       float fence_uy);
   void setHaloWidth(float halo_width);
   void setHaloHeight(float halo_height);
+  void setGuidanceRegions(const std::map<odb::dbInst*, Rect>& guidance_regions);
 
-  // Hierarchical Clustering Related Options
+  // Clustering Related Options
   void setNumBundledIOsPerBoundary(int num_bundled_ios);
   void setClusterSize(int max_num_macro,
                       int min_num_macro,
@@ -143,8 +144,10 @@ class HierRTLMP
   void setReportDirectory(const char* report_directory);
   void setDebug(std::unique_ptr<Mpl2Observer>& graphics);
   void setDebugShowBundledNets(bool show_bundled_nets);
+  void setDebugShowClustersIds(bool show_clusters_ids);
   void setDebugSkipSteps(bool skip_steps);
   void setDebugOnlyFinalResult(bool only_final_result);
+  void setDebugTargetClusterId(int target_cluster_id);
   void setBusPlanningOn(bool bus_planning_on);
 
   void setNumThreads(int threads) { num_threads_ = threads; }
@@ -249,7 +252,6 @@ class HierRTLMP
   sta::dbNetwork* network_ = nullptr;
   odb::dbDatabase* db_ = nullptr;
   odb::dbBlock* block_ = nullptr;
-  sta::dbSta* sta_ = nullptr;
   utl::Logger* logger_ = nullptr;
   par::PartitionMgr* tritonpart_ = nullptr;
   std::unique_ptr<PhysicalHierarchy> tree_;
@@ -269,12 +271,6 @@ class HierRTLMP
   // Parameters related to macro placement
   std::string report_directory_;
   std::string macro_placement_file_;
-
-  // User can specify a global region for some designs
-  float global_fence_lx_ = std::numeric_limits<float>::max();
-  float global_fence_ly_ = std::numeric_limits<float>::max();
-  float global_fence_ux_ = 0.0;
-  float global_fence_uy_ = 0.0;
 
   const int num_runs_ = 10;    // number of runs for SA
   int num_threads_ = 10;       // number of threads
@@ -311,9 +307,8 @@ class HierRTLMP
   float notch_weight_ = 1.0;
   float macro_blockage_weight_ = 1.0;
 
-  // guidances, fences, constraints
-  std::map<std::string, Rect> fences_;  // macro_name, fence
-  std::map<std::string, Rect> guides_;  // macro_name, guide
+  std::map<std::string, Rect> fences_;   // macro_name, fence
+  std::map<odb::dbInst*, Rect> guides_;  // Macro -> Guidance Region
   std::vector<Rect> placement_blockages_;
   std::vector<Rect> macro_blockages_;
   std::map<Boundary, Rect> boundary_to_io_blockage_;
@@ -344,6 +339,7 @@ class HierRTLMP
   bool skip_macro_placement_ = false;
 
   std::unique_ptr<Mpl2Observer> graphics_;
+  bool is_debug_only_final_result_{false};
 };
 
 class Pusher
@@ -415,7 +411,8 @@ class Snapper
       odb::dbITerm* pin,
       const odb::dbTechLayerDir& target_direction);
   void getTrackGrid(odb::dbTrackGrid* track_grid,
-                    std::vector<int>& coordinate_grid,
+                    int& origin,
+                    int& step,
                     const odb::dbTechLayerDir& target_direction);
   int getPinWidth(odb::dbITerm* pin,
                   const odb::dbTechLayerDir& target_direction);
