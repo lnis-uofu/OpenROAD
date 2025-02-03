@@ -160,6 +160,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 add_subdirectory(third-party)
 
 if(ENABLE_TESTS)
+  message(STATUS "tests are enabled")
   find_program (BASH_PROGRAM bash REQUIRED)
 
   enable_testing()
