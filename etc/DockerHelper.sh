@@ -61,6 +61,9 @@ _setup() {
         "ubuntu22.04")
             osBaseImage="ubuntu:22.04"
             ;;
+        "ubuntu24.10")
+            osBaseImage="ubuntu:24.10"
+            ;;
         "ubuntu24.04")
             osBaseImage="ubuntu:24.04"
             ;;
@@ -69,6 +72,9 @@ _setup() {
             ;;
         "debian11")
             osBaseImage="debian:bullseye"
+            ;;
+        "debiansid")
+            osBaseImage="debian:sid"
             ;;
         "rockylinux9")
             osBaseImage="rockylinux:9"

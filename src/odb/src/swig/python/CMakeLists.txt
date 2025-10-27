@@ -6,6 +6,7 @@ include("openroad")
 swig_lib(NAME          odb_py
          NAMESPACE     odb
          LANGUAGE      python
+         TYPE SHARED
          I_FILE        ../common/odb.i
          SWIG_INCLUDES ${PROJECT_SOURCE_DIR}/include
                        ${PROJECT_SOURCE_DIR}/src/swig/python
@@ -18,7 +19,7 @@ target_include_directories(odb_py
 )
 
 target_link_libraries(odb_py
-    PUBLIC
+  PRIVATE
         odb
         utl_lib
         ${TCL_LIBRARY}
@@ -28,8 +29,8 @@ target_link_libraries(odb_py
 )
 
 # Executable
-add_executable(odb_py-bin 
-                main.cpp 
+add_executable(odb_py-bin
+                main.cpp
 )
 
 target_include_directories(odb_py-bin
@@ -43,6 +44,6 @@ target_link_libraries(odb_py-bin
 )
 
 set_target_properties(odb_py-bin
-    PROPERTIES 
+    PROPERTIES
         OUTPUT_NAME odb_py
 )

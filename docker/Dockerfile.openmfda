@@ -1,0 +1,45 @@
+# create image with runtime dependencies and a copy of the binary from a
+# builder image
+# NOTE: don't use this file directly unless you know what you are doing,
+# instead use etc/DockerHelper.sh
+
+# https://github.com/moby/moby/issues/38379#issuecomment-448445652
+ARG copyImage=openroad/debiansid-builder-gcc:latest
+ARG fromImage=openroad/debiansid-dev:latest
+
+# need to use the line below as the "COPY --from" does not accept an ARG
+FROM $copyImage AS copyfrom
+
+FROM $fromImage
+
+COPY --from=copyfrom /OpenROAD/build/bin/openroad /usr/bin/.
+COPY --from=copyfrom /OpenROAD /opt/openroad
+
+
+RUN apt-get -y update \
+    && apt-get -y install --no-install-recommends \
+      make \
+      python3-flask \
+      gunicorn \
+      yosys \
+      openscad \
+      python3-numpy \
+      numpy-stl \
+      python3-pandas \
+      python3-pip \
+      python3-willow \
+      python3-pyqt5 \
+      kicad \
+      klayout \
+      ngspice \
+      nginx
+
+ADD opendbpy.py  /usr/lib/python3.13/
+ADD _opendbpy.so  /usr/lib/python3.13/
+ADD nginx.conf /etc/nginx/sites-enabled/
+ADD https://github.com/utah-MFDA/openmfda_flow.git#kicad /opt/openmfda
+
+WORKDIR /opt/openmfda/tools/kicad_server
+RUN useradd -m kicad
+USER kicad:kicad
+ENTRYPOINT [ "gunicorn", "-w 4", "server:app"]

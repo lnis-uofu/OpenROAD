@@ -12,6 +12,16 @@ FROM $copyImage AS copyfrom
 
 FROM $fromImage
 
-COPY --from=copyfrom /OpenROAD/build/bin/openroad /usr/bin/.
+RUN apt-get -y update \
+    && apt-get -y install --no-install-recommends \
+      make \
+      python3-flask \
+      gunicorn \
+      kicad
 
-ENTRYPOINT [ "openroad" ]
+COPY --from=copyfrom /OpenROAD/build/bin/openroad /usr/bin/.
+COPY --from=copyfrom /OpenROAD /opt/openroad
+
+ADD https://github.com/utah-MFDA/openmfda_flow/archive/refs/heads/kicad.zip /opt/openmfda
+
+# ENTRYPOINT [ "openroad" ]

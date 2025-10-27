@@ -54,7 +54,6 @@ option(UBSAN "Enable Undefined Behavior Sanitizer" OFF)
 project(OpenROAD VERSION 1
   LANGUAGES CXX
 )
-
 set(OPENROAD_HOME ${PROJECT_SOURCE_DIR})
 set(OPENROAD_SHARE ${CMAKE_INSTALL_PREFIX}/share/openroad)
 
@@ -140,6 +139,7 @@ add_subdirectory(test)
 
 # Not currently used but may become useful again with Kokkos
 target_compile_definitions(openroad PRIVATE GPU)
+option(BUILD_PYTHON "Build Python" ON)
 
 if(BUILD_PYTHON)
   target_compile_definitions(openroad PRIVATE BUILD_PYTHON=1)
@@ -171,7 +171,7 @@ if(BUILD_MAN)
     COMMAND make clean && make preprocess && make all -j${PROCESSOR_COUNT}
     WORKING_DIRECTORY ${OPENROAD_HOME}/docs
   )
-  
+
   # Based on ${CMAKE_INSTALL_PREFIX}, we want to go to ${CMAKE_INSTALL_PREFIX}/share/man
   install(DIRECTORY ${OPENROAD_HOME}/docs/cat DESTINATION ${OPENROAD_SHARE}/man)
   install(DIRECTORY ${OPENROAD_HOME}/docs/html DESTINATION ${OPENROAD_SHARE}/man)

@@ -432,7 +432,7 @@ _install_boost() {
     if [[ -f "${boost_prefix}/include/boost/version.hpp" ]]; then
         boost_installed_version=$(grep "^#define BOOST_LIB_VERSION" "${boost_prefix}/include/boost/version.hpp" | sed -e 's/.*"\(.*\)"/\1/' -e 's/_/./g')
     fi
-    
+
     local required_version="${BOOST_VERSION_BIG}"
     log "Checking Boost (System: ${boost_installed_version}, Required: ${required_version})"
     if [[ "${boost_installed_version}" != "${required_version}" ]]; then
@@ -946,7 +946,7 @@ _install_debian_packages() {
     _execute "Installing base packages..." apt-get -y install --no-install-recommends \
         automake autotools-dev binutils bison build-essential clang debhelper \
         devscripts flex g++ gcc git groff lcov libffi-dev libfl-dev libgomp1 \
-        libomp-dev libpcre2-dev libpcre3-dev libreadline-dev "libtcl${tcl_ver}" \
+        libomp-dev libpcre2-dev libreadline-dev libtcl8.6 \
         pandoc pkg-config python3-dev python3-click qt5-image-formats-plugins tcl-dev tcl-tclreadline \
         tcllib unzip wget libyaml-cpp-dev zlib1g-dev tzdata
 
@@ -955,7 +955,7 @@ _install_debian_packages() {
     else
         local python_ver="3.8"
         if [[ "${debian_version}" == "rodete" ]]; then
-            python_ver="3.12"
+            python_ver="3.13"
         fi
         _execute "Installing Debian specific packages..." apt-get install -y --no-install-recommends "libpython${python_ver}" libqt5charts5-dev qtbase5-dev qtchooser qt5-qmake qtbase5-dev-tools
     fi
@@ -1202,10 +1202,11 @@ EOF
             ;;
         "Debian GNU/Linux" | "Debian GNU/Linux rodete")
             local debian_version
-            debian_version=$(awk -F= '/^VERSION_ID/{print $2}' /etc/os-release | sed 's/"//g')
-            if [[ -z "${debian_version}" ]]; then
-                debian_version=$(awk -F= '/^VERSION_CODENAME/{print $2}' /etc/os-release | sed 's/"//g')
-            fi
+            # debian_version=$(awk -F= '/^VERSION_ID/{print $2}' /etc/os-release | sed 's/"//g')
+            # if [[ -z "${debian_version}" ]]; then
+            #     debian_version=$(awk -F= '/^VERSION_CODENAME/{print $2}' /etc/os-release | sed 's/"//g')
+            # fi
+            debian_version="sid"
             if [[ "${option}" == "base" || "${option}" == "all" ]]; then
                 _install_debian_packages "${debian_version}"
             fi
