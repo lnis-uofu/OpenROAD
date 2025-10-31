@@ -38,8 +38,9 @@ ADD opendbpy.py  /usr/lib/python3.13/
 ADD _opendbpy.so  /usr/lib/python3.13/
 ADD nginx.conf /etc/nginx/sites-enabled/
 ADD https://github.com/utah-MFDA/openmfda_flow.git#kicad /opt/openmfda
-
 WORKDIR /opt/openmfda/tools/kicad_server
 RUN useradd -m kicad
+RUN mkdir -p /var/tmp/openmfda
+RUN chown kicad:kicad /var/tmp/openmfda
 USER kicad:kicad
-ENTRYPOINT [ "gunicorn", "-w 4", "server:app"]
+ENTRYPOINT [ "gunicorn", "-w", "4", "server:app", "-b", "0.0.0.0"]
